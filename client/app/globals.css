@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --header-height: 72px;
+}
+
+body {
+  @apply bg-white text-gray-800;
+}
+
+.container-narrow {
+  @apply max-w-6xl mx-auto px-3 md:px-4;
+}
+
+.nav-link {
+  @apply px-3 py-2 rounded-lg hover:bg-secondary transition;
+}
