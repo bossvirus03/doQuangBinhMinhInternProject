@@ -65,7 +65,7 @@ export default function MonHoc() {
     try {
       if (editingId) {
         // update
-        await api.put(`/monhoc/${editingId}`, v);
+        await api.patch(`/monhoc/${editingId}`, v);
         message.success("Đã cập nhật môn học");
       } else {
         // add

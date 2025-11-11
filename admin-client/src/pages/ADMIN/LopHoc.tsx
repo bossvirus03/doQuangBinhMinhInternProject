@@ -71,7 +71,7 @@ export default function LopHoc() {
     setSaving(true);
     try {
       if (editingId) {
-        await api.put(`/lop/${editingId}`, v);
+        await api.patch(`/lop/${editingId}`, v);
         message.success("Đã cập nhật lớp học");
       } else {
         await api.post("/lop", v);
@@ -121,7 +121,9 @@ export default function LopHoc() {
                 </Button>
                 <Popconfirm
                   title="Xóa lớp học?"
-                  description={`Bạn chắc chắn muốn xóa ${record.Tenlop || record.Malop}?`}
+                  description={`Bạn chắc chắn muốn xóa ${
+                    record.Tenlop || record.Malop
+                  }?`}
                   okText="Xóa"
                   okButtonProps={{ danger: true }}
                   cancelText="Hủy"

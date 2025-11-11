@@ -1,7 +1,20 @@
 // src/pages/TEACHER/DiemRL.tsx
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../lib/api";
-import { Button, Card, Form, Input, InputNumber, Modal, Select, Space, Table, Tabs, Tag, message } from "antd";
+import {
+  Button,
+  Card,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+  Space,
+  Table,
+  Tabs,
+  Tag,
+  message,
+} from "antd";
 
 type Homeroom = { Malop: string; Tenlop: string };
 type DRL = {
@@ -43,7 +56,9 @@ export default function DiemRL() {
         setClasses(r.data);
         if (r.data?.length) setMalop(r.data[0].Malop);
       } catch (e: any) {
-        message.error(e?.response?.data?.message ?? "Không tải được danh sách lớp");
+        message.error(
+          e?.response?.data?.message ?? "Không tải được danh sách lớp"
+        );
       }
     })();
   }, []);
@@ -108,7 +123,8 @@ export default function DiemRL() {
 
   const submit = async () => {
     const v = await form.validateFields();
-    if (!allowScore(v.Diem)) return message.error("Điểm phải trong khoảng 0..100");
+    if (!allowScore(v.Diem))
+      return message.error("Điểm phải trong khoảng 0..100");
 
     const payload = {
       Mahs: String(v.Mahs).trim(),
@@ -123,7 +139,7 @@ export default function DiemRL() {
     setSaving(true);
     try {
       if (editingId !== null) {
-        await api.put(`/teacher/me/drl/${editingId}`, payload);
+        await api.patch(`/teacher/me/drl/${editingId}`, payload);
         message.success("Đã cập nhật");
       } else {
         await api.post(`/teacher/me/drl`, payload);
@@ -143,10 +159,14 @@ export default function DiemRL() {
   const searchByStudent = async () => {
     if (!searchMahs) return setStudentRows([]);
     try {
-      const r = await api.get(`/teacher/me/drl/student/${encodeURIComponent(searchMahs.trim())}`);
+      const r = await api.get(
+        `/teacher/me/drl/student/${encodeURIComponent(searchMahs.trim())}`
+      );
       setStudentRows(r.data);
     } catch (e: any) {
-      message.error(e?.response?.data?.message ?? "Không tải được điểm theo học sinh");
+      message.error(
+        e?.response?.data?.message ?? "Không tải được điểm theo học sinh"
+      );
     }
   };
 
@@ -165,7 +185,10 @@ export default function DiemRL() {
                     value={malop}
                     onChange={setMalop}
                     placeholder="Chọn lớp"
-                    options={classes.map((c) => ({ value: c.Malop, label: c.Tenlop || c.Malop }))}
+                    options={classes.map((c) => ({
+                      value: c.Malop,
+                      label: c.Tenlop || c.Malop,
+                    }))}
                   />
                   <InputNumber
                     value={namhoc}
@@ -196,7 +219,12 @@ export default function DiemRL() {
                     { title: "Mã HS", dataIndex: "Mahs", width: 100 },
                     { title: "Họ tên", dataIndex: "Hotenhs" },
                     // BE mới: Namhoc; BE cũ: Nam
-                    { title: "Năm", dataIndex: "Namhoc", width: 90, render: (_: any, r: DRL) => r.Namhoc ?? r.Nam },
+                    {
+                      title: "Năm",
+                      dataIndex: "Namhoc",
+                      width: 90,
+                      render: (_: any, r: DRL) => r.Namhoc ?? r.Nam,
+                    },
                     {
                       title: "Học kỳ",
                       dataIndex: "Hocky",
@@ -213,7 +241,11 @@ export default function DiemRL() {
                           <Button size="small" onClick={() => openEdit(r)}>
                             Sửa
                           </Button>
-                          <Button size="small" danger onClick={() => remove(r.id)}>
+                          <Button
+                            size="small"
+                            danger
+                            onClick={() => remove(r.id)}
+                          >
                             Xóa
                           </Button>
                         </Space>
@@ -235,12 +267,24 @@ export default function DiemRL() {
                   destroyOnClose
                 >
                   <Form form={form} layout="vertical" preserve={false}>
-                    <Form.Item name="Mahs" label="Mã học sinh" rules={[{ required: true, message: "Nhập mã học sinh" }]}>
+                    <Form.Item
+                      name="Mahs"
+                      label="Mã học sinh"
+                      rules={[{ required: true, message: "Nhập mã học sinh" }]}
+                    >
                       {/* RẤT QUAN TRỌNG: Không được set value/onChange ở đây để Form quản lý */}
                       <Input />
                     </Form.Item>
-                    <Form.Item name="Diem" label="Điểm rèn luyện (0-100)" rules={[{ required: true, message: "Nhập điểm" }]}>
-                      <InputNumber min={0} max={100} style={{ width: "100%" }} />
+                    <Form.Item
+                      name="Diem"
+                      label="Điểm rèn luyện (0-100)"
+                      rules={[{ required: true, message: "Nhập điểm" }]}
+                    >
+                      <InputNumber
+                        min={0}
+                        max={100}
+                        style={{ width: "100%" }}
+                      />
                     </Form.Item>
                     <Form.Item name="Namhoc" label="Năm học">
                       <InputNumber min={2000} style={{ width: "100%" }} />
@@ -285,7 +329,12 @@ export default function DiemRL() {
                     { title: "Mã HS", dataIndex: "Mahs", width: 100 },
                     { title: "Họ tên", dataIndex: "Hotenhs" },
                     { title: "Lớp", dataIndex: "Malop", width: 110 },
-                    { title: "Năm", dataIndex: "Namhoc", width: 90, render: (_: any, r: DRL) => r.Namhoc ?? r.Nam },
+                    {
+                      title: "Năm",
+                      dataIndex: "Namhoc",
+                      width: 90,
+                      render: (_: any, r: DRL) => r.Namhoc ?? r.Nam,
+                    },
                     { title: "Học kỳ", dataIndex: "Hocky", width: 90 },
                     { title: "Điểm", dataIndex: "Diem", width: 90 },
                     { title: "Ghi chú", dataIndex: "Note" },

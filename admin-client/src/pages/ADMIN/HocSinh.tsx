@@ -174,7 +174,7 @@ export default function HocSinh() {
     setSaving(true);
     try {
       if (editingId) {
-        await api.put(`/hocsinh/${editingId}`, payload);
+        await api.patch(`/hocsinh/${editingId}`, payload);
         message.success("Đã cập nhật học sinh");
       } else {
         await api.post("/hocsinh", payload);
