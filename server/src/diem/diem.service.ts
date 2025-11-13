@@ -100,6 +100,28 @@ export class DiemService {
     }
   }
 
+  async findByTeaching(key: {
+    Malop: string;
+    Mamon: string;
+    Namhoc: number;
+    Hocky: any;
+  }) {
+    const { Malop, Mamon, Namhoc, Hocky } = key;
+    if (!Malop || !Mamon || !Namhoc || !Hocky) {
+      throw new BadRequestException('Thiếu tham số bộ lọc');
+    }
+    return this.prisma.diem.findMany({
+      where: {
+        Mamon,
+        Namhoc,
+        Hocky,
+        Hocsinh: { Malop },
+      },
+      include: { Hocsinh: true },
+      orderBy: [{ Mahs: 'asc' }],
+    });
+  }
+
   async update(Madiem: number, dto: UpdateDiemDto) {
     try {
       return await this.prisma.diem.update({ where: { Madiem }, data: dto });

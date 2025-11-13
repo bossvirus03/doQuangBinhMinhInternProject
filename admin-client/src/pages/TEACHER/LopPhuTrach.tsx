@@ -28,12 +28,22 @@ type Student = {
   Ngaysinh?: string;
   Gioitinh?: "NAM" | "NU" | "KHAC";
 };
+type Score = {
+  Mahs: string;
+  Diemmieng?: number;
+  Diem15p?: number;
+  Diemhs2?: number;
+  Diemhs3?: number;
+  DiemTH?: number;
+  Diemtbmon?: number;
+};
 
 export default function LopPhuTrach() {
   const [teachings, setTeachings] = useState<Teaching[]>([]);
   const [selectedKey, setSelectedKey] = useState<string>();
   const [rows, setRows] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
+  const [scoresMap, setScoresMap] = useState<Record<string, Score>>({});
 
   // Modal edit score
   const [scoreOpen, setScoreOpen] = useState(false);
@@ -59,9 +69,33 @@ export default function LopPhuTrach() {
   useEffect(() => {
     if (!selectedTeaching) return;
     setLoading(true);
-    api
-      .get("/teacher/me/classes/" + selectedTeaching.Malop + "/students") // chỉ HS trong lớp thuộc lớp mình dạy
-      .then((r) => setRows(r.data))
+    Promise.all([
+      api.get("/teacher/me/classes/" + selectedTeaching.Malop + "/students"),
+      api.get("/diem/by-teaching", {
+        params: {
+          Malop: selectedTeaching.Malop,
+          Mamon: selectedTeaching.Mamon,
+          Namhoc: selectedTeaching.Namhoc,
+          Hocky: selectedTeaching.Hocky,
+        },
+      }),
+    ])
+      .then(([studentsRes, scoresRes]) => {
+        setRows(studentsRes.data);
+        const map: Record<string, Score> = {};
+        (scoresRes.data || []).forEach((s: any) => {
+          map[s.Mahs] = {
+            Mahs: s.Mahs,
+            Diemmieng: s.Diemmieng,
+            Diem15p: s.Diem15p,
+            Diemhs2: s.Diemhs2,
+            Diemhs3: s.Diemhs3,
+            DiemTH: s.DiemTH,
+            Diemtbmon: s.Diemtbmon,
+          };
+        });
+        setScoresMap(map);
+      })
       .finally(() => setLoading(false));
   }, [selectedTeaching]);
 
@@ -115,6 +149,30 @@ export default function LopPhuTrach() {
       await api.post("/diem/by-key/upsert", payload);
       message.success("Đã lưu điểm");
       setScoreOpen(false);
+      // refresh scores list
+      if (selectedTeaching) {
+        const scoresRes = await api.get("/diem/by-teaching", {
+          params: {
+            Malop: selectedTeaching.Malop,
+            Mamon: selectedTeaching.Mamon,
+            Namhoc: selectedTeaching.Namhoc,
+            Hocky: selectedTeaching.Hocky,
+          },
+        });
+        const map: Record<string, Score> = {};
+        (scoresRes.data || []).forEach((s: any) => {
+          map[s.Mahs] = {
+            Mahs: s.Mahs,
+            Diemmieng: s.Diemmieng,
+            Diem15p: s.Diem15p,
+            Diemhs2: s.Diemhs2,
+            Diemhs3: s.Diemhs3,
+            DiemTH: s.DiemTH,
+            Diemtbmon: s.Diemtbmon,
+          };
+        });
+        setScoresMap(map);
+      }
     } catch (e: any) {
       message.error(e?.response?.data?.message || "Lưu điểm thất bại");
     } finally {
@@ -155,6 +213,42 @@ export default function LopPhuTrach() {
               ) : (
                 <Tag>Khác</Tag>
               ),
+          },
+          {
+            title: "Miệng",
+            dataIndex: "Diemmieng",
+            width: 80,
+            render: (_: any, r: Student) => scoresMap[r.Mahs]?.Diemmieng ?? "—",
+          },
+          {
+            title: "15p",
+            dataIndex: "Diem15p",
+            width: 80,
+            render: (_: any, r: Student) => scoresMap[r.Mahs]?.Diem15p ?? "—",
+          },
+          {
+            title: "HS2",
+            dataIndex: "Diemhs2",
+            width: 80,
+            render: (_: any, r: Student) => scoresMap[r.Mahs]?.Diemhs2 ?? "—",
+          },
+          {
+            title: "HS3",
+            dataIndex: "Diemhs3",
+            width: 80,
+            render: (_: any, r: Student) => scoresMap[r.Mahs]?.Diemhs3 ?? "—",
+          },
+          {
+            title: "TH",
+            dataIndex: "DiemTH",
+            width: 80,
+            render: (_: any, r: Student) => scoresMap[r.Mahs]?.DiemTH ?? "—",
+          },
+          {
+            title: "TB Môn",
+            dataIndex: "Diemtbmon",
+            width: 90,
+            render: (_: any, r: Student) => scoresMap[r.Mahs]?.Diemtbmon ?? "—",
           },
         ]}
         onRow={(record) => ({ onClick: () => onRowClick(record) })}
