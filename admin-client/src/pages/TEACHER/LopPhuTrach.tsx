@@ -1,43 +1,136 @@
 // src/pages/TEACHER/LopPhuTrach.tsx
-import { useEffect, useState } from "react";
-import { Card, Select, Table, Tag } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Card,
+  Select,
+  Table,
+  Tag,
+  Modal,
+  Form,
+  InputNumber,
+  Space,
+  Button,
+  message,
+} from "antd";
 import { api } from "../../lib/api";
 
-type Teaching = { Malop: string; Tenlop: string; Mamon: string; Tenmon: string };
-type Student = { Mahs: string; Hotenhs: string; Ngaysinh?: string; Gioitinh?: "NAM"|"NU"|"KHAC" };
+type Teaching = {
+  Malop: string;
+  Tenlop: string;
+  Mamon: string;
+  Tenmon: string;
+  Namhoc: number;
+  Hocky: "HK1" | "HK2" | "HK_HE";
+};
+type Student = {
+  Mahs: string;
+  Hotenhs: string;
+  Ngaysinh?: string;
+  Gioitinh?: "NAM" | "NU" | "KHAC";
+};
 
 export default function LopPhuTrach() {
   const [teachings, setTeachings] = useState<Teaching[]>([]);
-  const [selected, setSelected] = useState<string>();
+  const [selectedKey, setSelectedKey] = useState<string>();
   const [rows, setRows] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Modal edit score
+  const [scoreOpen, setScoreOpen] = useState(false);
+  const [scoreSaving, setScoreSaving] = useState(false);
+  const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
+  const [form] = Form.useForm();
+
+  const keyOf = (t: Teaching) =>
+    `${t.Malop}::${t.Mamon}::${t.Namhoc}::${t.Hocky}`;
+  const selectedTeaching = useMemo(
+    () => teachings.find((t) => keyOf(t) === selectedKey),
+    [teachings, selectedKey]
+  );
 
   useEffect(() => {
     (async () => {
       const res = await api.get("/teacher/me/teachings"); // lớp + môn đang dạy
       setTeachings(res.data);
-      if (res.data?.length) setSelected(res.data[0].Malop);
+      if (res.data?.length) setSelectedKey(keyOf(res.data[0]));
     })();
   }, []);
 
   useEffect(() => {
-    if (!selected) return;
+    if (!selectedTeaching) return;
     setLoading(true);
     api
-      .get("/teacher/me/classes/" + selected + "/students") // chỉ HS trong lớp thuộc lớp mình dạy
+      .get("/teacher/me/classes/" + selectedTeaching.Malop + "/students") // chỉ HS trong lớp thuộc lớp mình dạy
       .then((r) => setRows(r.data))
       .finally(() => setLoading(false));
-  }, [selected]);
+  }, [selectedTeaching]);
+
+  const onRowClick = async (s: Student) => {
+    if (!selectedTeaching) return;
+    setCurrentStudent(s);
+    form.resetFields();
+    // load existing score by key
+    try {
+      const r = await api.get("/diem/by-key/find", {
+        params: {
+          Mahs: s.Mahs,
+          Mamon: selectedTeaching.Mamon,
+          Namhoc: selectedTeaching.Namhoc,
+          Hocky: selectedTeaching.Hocky,
+        },
+      });
+      const d = r.data || {};
+      form.setFieldsValue({
+        Diemmieng: d.Diemmieng,
+        Diem15p: d.Diem15p,
+        Diemhs2: d.Diemhs2,
+        Diemhs3: d.Diemhs3,
+        DiemTH: d.DiemTH,
+        Diemtbmon: d.Diemtbmon,
+      });
+    } catch (e: any) {
+      // if not found, keep empty (service returns null). Ignore errors.
+    }
+    setScoreOpen(true);
+  };
+
+  const saveScore = async () => {
+    if (!selectedTeaching || !currentStudent) return;
+    const v = await form.validateFields();
+    const payload = {
+      Mahs: currentStudent.Mahs,
+      Mamon: selectedTeaching.Mamon,
+      Namhoc: selectedTeaching.Namhoc,
+      Hocky: selectedTeaching.Hocky,
+      // optional scores
+      ...(v.Diemmieng !== undefined ? { Diemmieng: Number(v.Diemmieng) } : {}),
+      ...(v.Diem15p !== undefined ? { Diem15p: Number(v.Diem15p) } : {}),
+      ...(v.Diemhs2 !== undefined ? { Diemhs2: Number(v.Diemhs2) } : {}),
+      ...(v.Diemhs3 !== undefined ? { Diemhs3: Number(v.Diemhs3) } : {}),
+      ...(v.DiemTH !== undefined ? { DiemTH: Number(v.DiemTH) } : {}),
+      ...(v.Diemtbmon !== undefined ? { Diemtbmon: Number(v.Diemtbmon) } : {}),
+    };
+    setScoreSaving(true);
+    try {
+      await api.post("/diem/by-key/upsert", payload);
+      message.success("Đã lưu điểm");
+      setScoreOpen(false);
+    } catch (e: any) {
+      message.error(e?.response?.data?.message || "Lưu điểm thất bại");
+    } finally {
+      setScoreSaving(false);
+    }
+  };
 
   return (
     <Card title="Lớp phụ trách">
       <div style={{ marginBottom: 12 }}>
         <Select
-          value={selected}
-          onChange={setSelected}
+          value={selectedKey}
+          onChange={setSelectedKey}
           options={teachings.map((t) => ({
-            value: t.Malop,
-            label: `${t.Tenlop} — ${t.Tenmon}`,
+            value: keyOf(t),
+            label: `${t.Tenlop} — ${t.Tenmon} (Năm ${t.Namhoc}, ${t.Hocky})`,
           }))}
           placeholder="Chọn lớp đang dạy"
           style={{ minWidth: 320 }}
@@ -55,10 +148,64 @@ export default function LopPhuTrach() {
             dataIndex: "Gioitinh",
             width: 100,
             render: (g: Student["Gioitinh"]) =>
-              g === "NAM" ? <Tag color="blue">Nam</Tag> : g === "NU" ? <Tag color="magenta">Nữ</Tag> : <Tag>Khác</Tag>,
+              g === "NAM" ? (
+                <Tag color="blue">Nam</Tag>
+              ) : g === "NU" ? (
+                <Tag color="magenta">Nữ</Tag>
+              ) : (
+                <Tag>Khác</Tag>
+              ),
           },
         ]}
+        onRow={(record) => ({ onClick: () => onRowClick(record) })}
       />
+
+      <Modal
+        title={
+          currentStudent
+            ? `Sửa điểm: ${currentStudent.Hotenhs} (${currentStudent.Mahs})`
+            : "Sửa điểm"
+        }
+        open={scoreOpen}
+        onOk={saveScore}
+        confirmLoading={scoreSaving}
+        onCancel={() => {
+          setScoreOpen(false);
+          setCurrentStudent(null);
+        }}
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical">
+          <Space size="middle" style={{ display: "flex", flexWrap: "wrap" }}>
+            <Form.Item name="Diemmieng" label="Điểm miệng">
+              <InputNumber min={0} max={10} step={0.1} />
+            </Form.Item>
+            <Form.Item name="Diem15p" label="Điểm 15p">
+              <InputNumber min={0} max={10} step={0.1} />
+            </Form.Item>
+            <Form.Item name="Diemhs2" label="Điểm hệ số 2">
+              <InputNumber min={0} max={10} step={0.1} />
+            </Form.Item>
+            <Form.Item name="Diemhs3" label="Điểm hệ số 3">
+              <InputNumber min={0} max={10} step={0.1} />
+            </Form.Item>
+            <Form.Item name="DiemTH" label="Điểm thực hành">
+              <InputNumber min={0} max={10} step={0.1} />
+            </Form.Item>
+            <Form.Item name="Diemtbmon" label="Điểm TB môn">
+              <InputNumber min={0} max={10} step={0.1} />
+            </Form.Item>
+          </Space>
+          {selectedTeaching && (
+            <div style={{ color: "#888" }}>
+              Môn: <b>{selectedTeaching.Tenmon}</b> — Lớp:{" "}
+              <b>{selectedTeaching.Tenlop}</b> — Năm:{" "}
+              <b>{selectedTeaching.Namhoc}</b> — Học kỳ:{" "}
+              <b>{selectedTeaching.Hocky}</b>
+            </div>
+          )}
+        </Form>
+      </Modal>
     </Card>
   );
 }

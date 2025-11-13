@@ -19,7 +19,8 @@ import dayjs from "dayjs";
 
 const { Search } = Input;
 const URL_SEARCH = "/hocsinh/search";
-const URL_GV_SEARCH = "/giaovien/search";
+const URL_GV_SEARCH = "/teacher/search";
+const URL_LOP = "/lop";
 
 type Lop = { Malop: string; Tenlop: string; Magv: string };
 type Hocsinh = {
@@ -33,6 +34,7 @@ type Hocsinh = {
 };
 
 type Giaovien = { Magv: string; Hotengv: string };
+type Option = { label: string; value: string };
 
 type Meta = {
   total: number;
@@ -51,6 +53,7 @@ export default function HocSinh() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form] = Form.useForm<any>();
   const [gvList, setGvList] = useState<Giaovien[]>([]);
+  const [lopOptions, setLopOptions] = useState<Option[]>([]);
 
   // search + paging + sort
   const [q, setQ] = useState("");
@@ -77,7 +80,13 @@ export default function HocSinh() {
     try {
       const [hsRes, gvRes] = await Promise.all([
         api.get(URL_SEARCH, {
-          params: { q: _q, page: _page, limit: _limit, sortBy: _sortBy, order: _order },
+          params: {
+            q: _q,
+            page: _page,
+            limit: _limit,
+            sortBy: _sortBy,
+            order: _order,
+          },
         }),
         api.get(URL_GV_SEARCH, { params: { page: 1, limit: 1000 } }),
       ]);
@@ -96,6 +105,22 @@ export default function HocSinh() {
   };
 
   useEffect(() => {
+    // fetch class options once
+    (async () => {
+      try {
+        const res = await api.get(URL_LOP, {
+          params: { page: 1, limit: 1000 },
+        });
+        const items = (res.data.items ?? []).map((l: any) => ({
+          label: l.Tenlop || l.Malop,
+          value: l.Malop,
+        })) as Option[];
+        setLopOptions(items);
+      } catch {
+        // ignore
+      }
+    })();
+
     fetchData("", 1, limit, "Mahs", "asc");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -177,7 +202,11 @@ export default function HocSinh() {
         await api.patch(`/hocsinh/${editingId}`, payload);
         message.success("Đã cập nhật học sinh");
       } else {
-        await api.post("/hocsinh", payload);
+        const createPayload = {
+          ...payload,
+          ...(v.Password ? { Password: v.Password } : {}),
+        };
+        await api.post("/hocsinh", createPayload);
         message.success("Đã thêm học sinh");
       }
       setOpen(false);
@@ -304,6 +333,16 @@ export default function HocSinh() {
           <Form.Item name="Hotenhs" label="Họ tên" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
+          {!editingId && (
+            <Form.Item
+              name="Password"
+              label="Mật khẩu ban đầu"
+              tooltip="Để trống để dùng mật khẩu mặc định: {Mã HS}{Mã lớp}"
+              rules={[{ min: 6, message: "Ít nhất 6 ký tự" }]}
+            >
+              <Input.Password placeholder="Nhập mật khẩu (tùy chọn)" />
+            </Form.Item>
+          )}
           <Form.Item
             name="Gioitinh"
             label="Giới tính"
@@ -318,7 +357,13 @@ export default function HocSinh() {
             />
           </Form.Item>
           <Form.Item name="Malop" label="Lớp">
-            <Input placeholder="VD: 10A1" />
+            <Select
+              allowClear
+              placeholder="Chọn lớp…"
+              options={lopOptions}
+              showSearch
+              optionFilterProp="label"
+            />
           </Form.Item>
           <Form.Item name="Diachi" label="Địa chỉ">
             <Input />

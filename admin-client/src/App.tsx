@@ -4,7 +4,6 @@ import Login from "./pages/AUTH/Login";
 import Shell from "./components/Shell";
 import Home from "./pages/ADMIN/Home";
 import Dashboard from "./pages/ADMIN/Dashboard";
-import Users from "./pages/ADMIN/Users";
 import NamHoc from "./pages/ADMIN/NamHoc";
 import HocKy from "./pages/ADMIN/HocKy";
 import GiaoVien from "./pages/ADMIN/GiaoVien";
@@ -30,8 +29,9 @@ export default function App() {
           <Route path="tin-tuc" element={<TinTuc />} />
 
           {/* Admin-only block */}
-          <Route element={<ProtectedRoute roles={["ADMIN"]} />}>   {/* ✅ ADMIN */}
-            <Route path="users" element={<Users />} />
+          <Route element={<ProtectedRoute roles={["ADMIN"]} />}>
+            {" "}
+            {/* ✅ ADMIN */}
             <Route path="nam-hoc" element={<NamHoc />} />
             <Route path="hoc-ky" element={<HocKy />} />
             <Route path="mon-hoc" element={<MonHoc />} />

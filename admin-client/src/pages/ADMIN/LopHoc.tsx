@@ -30,7 +30,7 @@ export default function LopHoc() {
     try {
       const [lopRes, gvRes] = await Promise.all([
         api.get("/lop", { params: { page: 1, limit: 50 } }),
-        api.get("/giaovien", { params: { page: 1, limit: 1000 } }),
+        api.get("/teacher", { params: { page: 1, limit: 1000 } }),
       ]);
       setRows(lopRes.data.items);
       setGvList(gvRes.data.items);

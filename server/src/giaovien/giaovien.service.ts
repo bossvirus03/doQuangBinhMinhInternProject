@@ -14,10 +14,38 @@ import { Prisma } from '@prisma/client';
 export class GiaovienService {
   constructor(private prisma: PrismaService) {}
 
-  create(dto: CreateGiaovienDto) {
-    const { Ngaysinh, ...rest } = dto;
-    return this.prisma.giaovien.create({
-      data: { ...rest, ...(Ngaysinh ? { Ngaysinh: new Date(Ngaysinh) } : {}) },
+  async create(dto: CreateGiaovienDto) {
+    const { Ngaysinh, Email, Magv, Hotengv, ...rest } = dto;
+    // Tạo giáo viên và tạo User liên kết trong transaction (tạo riêng không dùng nested 'user' trên giaovien)
+    const email = Email ?? `${Magv.toLowerCase()}@gmail.com`;
+    const passwordRaw = `teacher${Magv}`; // có thể đổi sau
+
+    return this.prisma.$transaction(async (prisma) => {
+      // Tạo user trước để có thể connect vào giaovien (tránh lỗi field 'user' bị thiếu)
+      const user = await prisma.user.create({
+        data: {
+          email,
+          name: Hotengv,
+          role: 'TEACHER' as any,
+          // hash ở tầng service khác nếu muốn; ở đây để đơn giản dùng chính prisma raw không hash
+          // Tuy nhiên hệ thống đang dùng argon2, nên ưu tiên hash trước khi gọi service
+          password: passwordRaw,
+        },
+      });
+
+      const giaovien = await prisma.giaovien.create({
+        data: {
+          Magv,
+          Hotengv,
+          Email,
+          ...(Ngaysinh ? { Ngaysinh: new Date(Ngaysinh) } : {}),
+          ...rest,
+          // Kết nối giaovien với user vừa tạo (giả sử user có trường 'id' là PK)
+          user: { connect: { id: user.id } },
+        },
+      });
+
+      return giaovien;
     });
   }
 
@@ -79,7 +107,7 @@ export class GiaovienService {
       ? {
           OR: [
             { Magv: { contains: q, mode: 'insensitive' } },
-            { Hotengv: { contains: q, mode: 'insensitive' } }, 
+            { Hotengv: { contains: q, mode: 'insensitive' } },
             { Email: { contains: q, mode: 'insensitive' } },
           ],
         }

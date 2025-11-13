@@ -18,7 +18,7 @@ import { api } from "../../lib/api";
 import dayjs from "dayjs";
 
 const { Search } = Input;
-const URL_SEARCH = "/giaovien/search";
+const URL_SEARCH = "/teacher/search";
 const URL_LOP = "/lop";
 const URL_MON = "/monhoc";
 
@@ -34,6 +34,12 @@ type Giaovien = {
   Gioitinh?: "NAM" | "NU" | "KHAC";
   ChuNhiem?: LopChuNhiem[];
   MonPhuTrach?: MonPT[];
+  Giangdays?: Array<{
+    Malop: string;
+    Mamon: string;
+    Namhoc: number;
+    Hocky: string;
+  }>;
 };
 
 type Option = { label: string; value: string };
@@ -105,14 +111,22 @@ export default function GiaoVien() {
     setLoading(true);
     try {
       const res = await api.get(URL_SEARCH, {
-        params: { q: _q, page: _page, limit: _limit, sortBy: _sortBy, order: _order },
+        params: {
+          q: _q,
+          page: _page,
+          limit: _limit,
+          sortBy: _sortBy,
+          order: _order,
+        },
       });
       const data = res.data?.data ?? res.data?.items ?? [];
       const meta: Meta | undefined = res.data?.meta;
       setRows(data);
       setTotal(meta?.total ?? data.length);
     } catch (e: any) {
-      message.error(e?.response?.data?.message || "Lỗi tải danh sách giáo viên");
+      message.error(
+        e?.response?.data?.message || "Lỗi tải danh sách giáo viên"
+      );
     } finally {
       setLoading(false);
     }
@@ -179,6 +193,9 @@ export default function GiaoVien() {
         : undefined,
       ChuNhiemMalop: r.ChuNhiem?.map((c) => c.Malop) ?? [],
       MonPhuTrachMamon: r.MonPhuTrach?.map((m) => m.Mamon) ?? [],
+      LopPhuTrachMalop: Array.from(
+        new Set((r.Giangdays || []).map((g) => g.Malop))
+      ),
     });
     setOpen(true);
   };
@@ -194,15 +211,20 @@ export default function GiaoVien() {
       Ngaysinh: v.Ngaysinh ? dayjs(v.Ngaysinh).toISOString() : undefined,
       ChuNhiemMalop: v.ChuNhiemMalop ?? [],
       MonPhuTrachMamon: v.MonPhuTrachMamon ?? [],
+      LopPhuTrachMalop: v.LopPhuTrachMalop ?? [],
     };
 
     setSaving(true);
     try {
       if (editingId) {
-        await api.patch(`/giaovien/${editingId}`, payload);
+        await api.patch(`/teacher/${editingId}`, payload);
         message.success("Đã cập nhật giáo viên");
       } else {
-        await api.post("/giaovien", payload);
+        const createPayload = {
+          ...payload,
+          ...(v.Password ? { Password: v.Password } : {}),
+        };
+        await api.post("/teacher", createPayload);
         message.success("Đã thêm giáo viên");
       }
       setOpen(false);
@@ -215,7 +237,7 @@ export default function GiaoVien() {
   const handleDelete = async (id: string) => {
     setLoading(true);
     try {
-      await api.delete(`/giaovien/${id}`);
+      await api.delete(`/teacher/${id}`);
       message.success("Đã xóa giáo viên");
       await fetchData(q, page, limit, sortBy, order);
     } finally {
@@ -351,6 +373,16 @@ export default function GiaoVien() {
           <Form.Item name="Email" label="Email">
             <Input type="email" />
           </Form.Item>
+          {!editingId && (
+            <Form.Item
+              name="Password"
+              label="Mật khẩu ban đầu"
+              tooltip="Để trống để dùng mật khẩu mặc định: teacher{Mã GV}"
+              rules={[{ min: 6, message: "Ít nhất 6 ký tự" }]}
+            >
+              <Input.Password placeholder="Nhập mật khẩu (tùy chọn)" />
+            </Form.Item>
+          )}
           <Form.Item name="SDT" label="SĐT">
             <Input />
           </Form.Item>
@@ -394,6 +426,21 @@ export default function GiaoVien() {
               allowClear
               placeholder="Chọn môn…"
               options={monOptions}
+              showSearch
+              optionFilterProp="label"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="LopPhuTrachMalop"
+            label="Lớp phụ trách"
+            tooltip="Chọn các lớp đang giảng dạy (màn này chỉ chọn lớp; tạo lịch giảng dạy chi tiết ở phần Giảng dạy)"
+          >
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="Chọn lớp…"
+              options={lopOptions}
               showSearch
               optionFilterProp="label"
             />

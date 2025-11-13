@@ -16,7 +16,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   news      News[]
-  avatarUrl String?  
+  avatarUrl String?
+
+  hocsinhs Hocsinh[] @relation("UserToHocsinh")
+
+  giaoviens Giaovien[] @relation("UserToGiaovien")
 }
 
 enum Role {
@@ -58,6 +62,9 @@ model Hocsinh {
   Lop      Lop?     @relation(fields: [Malop], references: [Malop])
   Diems    Diem[]
   DiemRLs  DiemRL[] @relation("Hocsinh_DiemRL")
+  // Link to User (required, 1-1)
+  userId   Int      @unique
+  user     User     @relation("UserToHocsinh", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Giaovien {
@@ -71,6 +78,8 @@ model Giaovien {
   ChuNhiem    Lop[]      @relation("Lop_GVCN")
   MonPhuTrach Monhoc[]
   Giangdays   Giangday[]
+  userId      Int        @unique
+  user        User       @relation("UserToGiaovien", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Monhoc {

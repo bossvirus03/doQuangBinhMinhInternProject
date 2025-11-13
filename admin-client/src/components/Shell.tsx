@@ -17,9 +17,11 @@ const { Header, Sider, Content } = Layout;
 type Role = "ADMIN" | "TEACHER" | "USER";
 function getUser() {
   try {
-    return JSON.parse(localStorage.getItem("user") || "null") as
-      | { id: number; email: string; role: Role }
-      | null;
+    return JSON.parse(localStorage.getItem("user") || "null") as {
+      id: number;
+      email: string;
+      role: Role;
+    } | null;
   } catch {
     return null;
   }
@@ -40,7 +42,6 @@ export default function Shell() {
   // key đang chọn: lấy key có prefix khớp nhất với pathname
   const allKeys = [
     "/dashboard",
-    "/users",
     "/nam-hoc",
     "/hoc-ky",
     "/mon-hoc",
@@ -48,9 +49,11 @@ export default function Shell() {
     "/hoc-sinh",
     "/giao-vien",
     "/tin-tuc",
+    "/diem-rl",
+    "/lop-chu-nhiem",
+    "/lop-phu-trach",
   ];
-  const currentKey =
-    allKeys.find((k) => location.pathname.startsWith(k)) ?? "";
+  const currentKey = allKeys.find((k) => location.pathname.startsWith(k)) ?? "";
 
   const logout = () => {
     localStorage.clear();
@@ -59,30 +62,95 @@ export default function Shell() {
 
   // Menu cho ADMIN
   const adminItems = [
-    { key: "/dashboard", icon: <AppstoreOutlined />, label: <Link to="/dashboard">Dashboard</Link> },
-    { key: "/users", icon: <UserOutlined />, label: <Link to="/users">Quản lý người dùng</Link> },
-    { key: "/nam-hoc", icon: <CalendarOutlined />, label: <Link to="/nam-hoc">Quản lý năm học</Link> },
-    { key: "/hoc-ky", icon: <BookOutlined />, label: <Link to="/hoc-ky">Quản lý học kỳ</Link> },
-    { key: "/mon-hoc", icon: <ReadOutlined />, label: <Link to="/mon-hoc">Quản lý môn học</Link> },
-    { key: "/lop-hoc", icon: <TeamOutlined />, label: <Link to="/lop-hoc">Quản lý lớp học</Link> },
-    { key: "/hoc-sinh", icon: <UserOutlined />, label: <Link to="/hoc-sinh">Quản lý học sinh</Link> },
-    { key: "/giao-vien", icon: <UserOutlined />, label: <Link to="/giao-vien">Quản lý giáo viên</Link> },
-    { key: "/tin-tuc", icon: <FileTextOutlined />, label: <Link to="/tin-tuc">Tin tức</Link> },
+    {
+      key: "/dashboard",
+      icon: <AppstoreOutlined />,
+      label: <Link to="/dashboard">Dashboard</Link>,
+    },
+    {
+      key: "/nam-hoc",
+      icon: <CalendarOutlined />,
+      label: <Link to="/nam-hoc">Quản lý năm học</Link>,
+    },
+    {
+      key: "/hoc-ky",
+      icon: <BookOutlined />,
+      label: <Link to="/hoc-ky">Quản lý học kỳ</Link>,
+    },
+    {
+      key: "/mon-hoc",
+      icon: <ReadOutlined />,
+      label: <Link to="/mon-hoc">Quản lý môn học</Link>,
+    },
+    {
+      key: "/lop-hoc",
+      icon: <TeamOutlined />,
+      label: <Link to="/lop-hoc">Quản lý lớp học</Link>,
+    },
+    {
+      key: "/hoc-sinh",
+      icon: <UserOutlined />,
+      label: <Link to="/hoc-sinh">Quản lý học sinh</Link>,
+    },
+    {
+      key: "/giao-vien",
+      icon: <UserOutlined />,
+      label: <Link to="/giao-vien">Quản lý giáo viên</Link>,
+    },
+    {
+      key: "/tin-tuc",
+      icon: <FileTextOutlined />,
+      label: <Link to="/tin-tuc">Tin tức</Link>,
+    },
   ];
 
   const teacherItems = [
-    { key: "/diem-rl", icon: <FileTextOutlined />, label: <Link to="/diem-rl">Điểm rèn luyện</Link> },
-    { key: "/lop-chu-nhiem", icon: <TeamOutlined />, label: <Link to="/lop-chu-nhiem">Lớp chủ nhiệm</Link> },
-    { key: "/lop-phu-trach", icon: <TeamOutlined />, label: <Link to="/lop-phu-trach">Lớp phụ trách</Link> },
+    {
+      key: "/dashboard",
+      icon: <AppstoreOutlined />,
+      label: <Link to="/dashboard">Dashboard</Link>,
+    },
+    {
+      key: "/tin-tuc",
+      icon: <FileTextOutlined />,
+      label: <Link to="/tin-tuc">Tin tức</Link>,
+    },
+    {
+      key: "/diem-rl",
+      icon: <FileTextOutlined />,
+      label: <Link to="/diem-rl">Điểm rèn luyện</Link>,
+    },
+    {
+      key: "/lop-chu-nhiem",
+      icon: <TeamOutlined />,
+      label: <Link to="/lop-chu-nhiem">Lớp chủ nhiệm</Link>,
+    },
+    {
+      key: "/lop-phu-trach",
+      icon: <TeamOutlined />,
+      label: <Link to="/lop-phu-trach">Lớp phụ trách</Link>,
+    },
   ];
 
   const basicItems = [
-    { key: "/dashboard", icon: <AppstoreOutlined />, label: <Link to="/dashboard">Dashboard</Link> },
-    { key: "/tin-tuc", icon: <FileTextOutlined />, label: <Link to="/tin-tuc">Tin tức</Link> },
+    {
+      key: "/dashboard",
+      icon: <AppstoreOutlined />,
+      label: <Link to="/dashboard">Dashboard</Link>,
+    },
+    {
+      key: "/tin-tuc",
+      icon: <FileTextOutlined />,
+      label: <Link to="/tin-tuc">Tin tức</Link>,
+    },
   ];
 
-  const items = role === "ADMIN" ? adminItems : role === "TEACHER"  ? teacherItems : basicItems;
-
+  const items =
+    role === "ADMIN"
+      ? adminItems
+      : role === "TEACHER"
+      ? teacherItems
+      : basicItems;
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -103,7 +171,12 @@ export default function Shell() {
           </Link>
         </div>
 
-        <Menu theme="dark" mode="inline" selectedKeys={[currentKey]} items={items} />
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[currentKey]}
+          items={items}
+        />
       </Sider>
 
       <Layout>

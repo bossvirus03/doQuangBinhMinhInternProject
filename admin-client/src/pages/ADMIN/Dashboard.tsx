@@ -33,7 +33,7 @@ export default function Dashboard() {
     (async () => {
       try {
         const [gv, mh, hs, tt] = await Promise.all([
-          api.get("/giaovien", { params: { page: 1, limit: 1 } }),
+          api.get("/teacher", { params: { page: 1, limit: 1 } }),
           api.get("/monhoc", { params: { page: 1, limit: 1 } }),
           api.get("/hocsinh", { params: { page: 1, limit: 1 } }),
           api.get("/news", { params: { page: 1, limit: 1 } }),
@@ -102,7 +102,10 @@ export default function Dashboard() {
           <Col xs={24} sm={12} md={12} lg={6} key={t.key}>
             <Card
               bodyStyle={{ padding: 0 }}
-              style={{ border: "none", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
+              style={{
+                border: "none",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              }}
             >
               <div
                 style={{
@@ -119,8 +122,14 @@ export default function Dashboard() {
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   {t.icon}
                   <div>
-                    <div style={{ fontSize: 26, fontWeight: 700, lineHeight: 1 }}>
-                      {loading ? <Skeleton.Input active style={{ width: 60 }} /> : t.value}
+                    <div
+                      style={{ fontSize: 26, fontWeight: 700, lineHeight: 1 }}
+                    >
+                      {loading ? (
+                        <Skeleton.Input active style={{ width: 60 }} />
+                      ) : (
+                        t.value
+                      )}
                     </div>
                     <div style={{ opacity: 0.95 }}>{t.title}</div>
                   </div>
@@ -138,7 +147,6 @@ export default function Dashboard() {
           </Col>
         ))}
       </Row>
-
     </div>
   );
 }

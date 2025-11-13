@@ -8,16 +8,36 @@ import {
 import { CreateHocsinhDto } from './dto/create-hocsinh.dto';
 import { UpdateHocsinhDto } from './dto/update-hocsinh.dto';
 import { SearchDto } from 'src/common/dto/search.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class HocsinhService {
   constructor(private prisma: PrismaService) {}
 
-  create(dto: CreateHocsinhDto) {
-    const { Ngaysinh, ...rest } = dto;
-    return this.prisma.hocsinh.create({
-      data: { ...rest, Ngaysinh: new Date(Ngaysinh) },
+  async create(dto: CreateHocsinhDto) {
+    const { Ngaysinh, Malop, Mahs, Hotenhs, Password, ...rest } = dto as any;
+    const email = `${Mahs.toLowerCase()}@gmail.com`;
+    const raw =
+      Password && String(Password).trim().length >= 6
+        ? String(Password).trim()
+        : `${Mahs}${Malop ?? ''}` || `${Mahs}`;
+    const hashed = await argon2.hash(raw);
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.upsert({
+        where: { email },
+        update: { name: Hotenhs, role: Role.USER, password: hashed },
+        create: { email, name: Hotenhs, role: Role.USER, password: hashed },
+      });
+      const data: any = {
+        Mahs,
+        Hotenhs,
+        ...rest,
+        Ngaysinh: new Date(Ngaysinh),
+        userId: user.id,
+      };
+      if (Malop) data.Malop = Malop; // hoặc connect Lop nếu muốn: Lop.connect
+      return tx.hocsinh.create({ data });
     });
   }
 
@@ -40,25 +60,27 @@ export class HocsinhService {
       where: { Mahs },
       include: { Lop: true, Diems: true },
     });
-    if (!data) throw new NotFoundException('Không tìm thấy học sinh');
+    if (!data) {
+      throw new NotFoundException('Không tìm thấy học sinh');
+    }
     return data;
   }
 
   async update(Mahs: string, dto: UpdateHocsinhDto) {
     try {
-      const { Ngaysinh, ...rest } = dto;
+      const { Ngaysinh, Malop, ...rest } = dto;
       return await this.prisma.hocsinh.update({
         where: { Mahs },
         data: {
           ...rest,
           ...(Ngaysinh ? { Ngaysinh: new Date(Ngaysinh) } : {}),
+          ...(Malop ? { Lop: { connect: { Malop } } } : {}),
         },
       });
     } catch {
       throw new NotFoundException('Không tìm thấy học sinh');
     }
   }
-
   async remove(Mahs: string) {
     try {
       return await this.prisma.hocsinh.delete({ where: { Mahs } });

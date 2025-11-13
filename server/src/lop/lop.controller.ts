@@ -10,7 +10,6 @@ import { SearchDto } from 'src/common/dto/search.dto';
 // @Roles('ADMIN')
 export class LopController {
   constructor(private readonly service: LopService) {}
-
   @Post()
   create(@Body() dto: CreateLopDto) {
     return this.service.create(dto);

@@ -7,7 +7,6 @@ import { NewsModule } from './news/news.module';
 import { MailModule } from './mailer/mailer.module';
 import { LopModule } from './lop/lop.module';
 import { HocsinhModule } from './hocsinh/hocsinh.module';
-import { GiaovienModule } from './giaovien/giaovien.module';
 import { MonhocModule } from './monhoc/monhoc.module';
 import { GiangdayModule } from './giangday/giangday.module';
 import { DiemModule } from './diem/diem.module';
@@ -24,7 +23,6 @@ import { TeacherModule } from './teacher/teacher.module';
     MailModule,
     LopModule,
     HocsinhModule,
-    GiaovienModule,
     MonhocModule,
     GiangdayModule,
     DiemModule,
