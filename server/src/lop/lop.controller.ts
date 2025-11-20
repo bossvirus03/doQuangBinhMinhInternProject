@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Query, Patch, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { LopService } from './lop.service';
 import { CreateLopDto } from './dto/create-lop.dto';
 import { UpdateLopDto } from './dto/update-lop.dto';
@@ -32,6 +41,7 @@ export class LopController {
 
   @Delete(':Malop')
   remove(@Param('Malop') Malop: string) {
+    console.log('Deleting class with Malop:', Malop);
     return this.service.remove(Malop);
   }
 

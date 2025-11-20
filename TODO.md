@@ -1,0 +1,4 @@
+- [x] Inspect lop deletion constraints
+- [x] Design approach to handle Giangday references when deleting lop
+- [x] Implement safe removal logic or validation in server/src/lop/lop.service.ts
+- [ ] Test delete API with existing Giangday references

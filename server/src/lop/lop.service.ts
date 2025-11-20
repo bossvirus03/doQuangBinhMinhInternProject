@@ -50,11 +50,28 @@ export class LopService {
   }
 
   async remove(Malop: string) {
-    try {
-      return await this.prisma.lop.delete({ where: { Malop } });
-    } catch {
-      throw new NotFoundException('Không tìm thấy lớp');
-    }
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.lop.findUnique({ where: { Malop } });
+      if (!existing) throw new NotFoundException('Không tìm thấy lớp');
+
+      // Purge grade aggregates tied to the class to keep relational integrity.
+      await tx.diem.deleteMany({
+        where: {
+          OR: [{ Giangday: { Malop } }, { Hocsinh: { Malop } }],
+        },
+      });
+
+      // Remove discipline scores recorded for this class.
+      await tx.diemRL.deleteMany({ where: { Malop } });
+
+      // Drop teaching assignments referencing the class before deleting it.
+      await tx.giangday.deleteMany({ where: { Malop } });
+
+      // Unassign students from the class so they can be reassigned later.
+      await tx.hocsinh.updateMany({ where: { Malop }, data: { Malop: null } });
+
+      return tx.lop.delete({ where: { Malop } });
+    });
   }
 
   async search(dto: SearchDto) {
