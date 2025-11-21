@@ -12,10 +12,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { getMagvFromUserEmail } from './teacher.helper';
 
 function toYear(v: unknown) {
-  const n = typeof v === 'string' ? Number(v) : (v as number);
-  if (!Number.isInteger(n))
-    throw new BadRequestException('Năm học không hợp lệ');
-  return n;
+  // Accept numbers (e.g. 2024) or strings like "2024" or "2024-2025" or "2024/2025".
+  if (typeof v === 'number' && Number.isInteger(v)) return v;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    // Try to capture leading 4-digit year
+    const m = s.match(/^(\d{4})/);
+    if (m) return Number(m[1]);
+    const n = Number(s);
+    if (Number.isInteger(n)) return n;
+  }
+  throw new BadRequestException('Năm học không hợp lệ');
 }
 
 function toDate(v: unknown) {

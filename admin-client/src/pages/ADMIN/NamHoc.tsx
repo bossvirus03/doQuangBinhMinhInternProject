@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { Button, Modal, Form, Input, Table, Tag, Space, Popconfirm, message } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import { Button, Modal, Form, Input, Table, Tag, Space, Popconfirm, message, Checkbox } from "antd";
+import { api } from "../../lib/api";
 
 type NamHocRow = { key: string; code: string; name: string; active: boolean };
 
@@ -7,10 +8,29 @@ export default function NamHoc() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<NamHocRow | null>(null);
   const [form] = Form.useForm<NamHocRow>();
-  const [rows, setRows] = useState<NamHocRow[]>([
-    { key: "NH2425", code: "NH2425", name: "Năm học 2024-2025", active: true },
-    { key: "NH2526", code: "NH2526", name: "Năm học 2025-2026", active: false },
-  ]);
+  const [rows, setRows] = useState<NamHocRow[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const r = await api.get("/admin/school-years");
+        const list: NamHocRow[] = (r.data || []).map((y: any) => ({
+          key: y.code,
+          code: y.code,
+            name: y.name,
+            active: !!y.active,
+        }));
+        setRows(list);
+      } catch (e: any) {
+        message.error(e?.response?.data?.message || "Không tải được năm học");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   const columns = useMemo(
     () => [
@@ -49,18 +69,18 @@ export default function NamHoc() {
   };
 
   const onDelete = (key: string) => {
-    setRows(prev => prev.filter(x => x.key !== key));
-    message.success("Đã xoá");
+    setRows((prev: NamHocRow[]) => prev.filter((x: NamHocRow) => x.key !== key));
+    message.success("Đã xoá (chỉ local — chưa lưu server)");
   };
 
   const onSubmit = async () => {
     const v = await form.validateFields();
     if (editing) {
-      setRows(prev => prev.map(x => (x.key === editing.key ? { ...editing, ...v } : x)));
-      message.success("Đã cập nhật");
+      setRows((prev: NamHocRow[]) => prev.map((x: NamHocRow) => (x.key === editing.key ? { ...editing, ...v } : x)));
+      message.success("Đã cập nhật (local)");
     } else {
-       setRows(prev => [{ ...v, key: v.code }, ...prev]);
-      message.success("Đã tạo");
+      setRows((prev: NamHocRow[]) => [{ ...v, key: v.code }, ...prev]);
+      message.success("Đã tạo (local)");
     }
     setOpen(false);
   };
@@ -72,7 +92,7 @@ export default function NamHoc() {
         <Button type="primary" onClick={onCreate}>Thêm năm học</Button>
       </div>
 
-      <Table rowKey="key" columns={columns as any} dataSource={rows} />
+  <Table rowKey="key" columns={columns as any} dataSource={rows} loading={loading} />
 
       <Modal
         title={editing ? "Sửa năm học" : "Thêm năm học"}
@@ -89,7 +109,7 @@ export default function NamHoc() {
             <Input placeholder="Năm học 2024-2025" />
           </Form.Item>
           <Form.Item name="active" label="Đang sử dụng" valuePropName="checked">
-            <Input type="checkbox" />
+            <Checkbox />
           </Form.Item>
         </Form>
       </Modal>

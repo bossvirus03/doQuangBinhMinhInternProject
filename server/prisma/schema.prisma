@@ -168,3 +168,5 @@ model DiemRL {
   @@index([Malop, Namhoc, Hocky])
   @@index([Mahs, Namhoc, Hocky])
 }
+
+// (Đang tạm thời bỏ SchoolYear cho đến khi nâng cấp Prisma config phù hợp)

@@ -12,6 +12,8 @@ import { GiangdayModule } from './giangday/giangday.module';
 import { DiemModule } from './diem/diem.module';
 import { ChitietdiemModule } from './chitietdiem/chitietdiem.module';
 import { TeacherModule } from './teacher/teacher.module';
+import { SchoolYearModule } from './schoolyear/schoolyear.module';
+import { SemesterModule } from './semester/semester.module';
 
 @Module({
   imports: [
@@ -27,7 +29,9 @@ import { TeacherModule } from './teacher/teacher.module';
     GiangdayModule,
     DiemModule,
     ChitietdiemModule,
-    TeacherModule,
+  TeacherModule,
+  SchoolYearModule,
+  SemesterModule,
   ],
 })
 export class AppModule {}
